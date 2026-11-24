@@ -1,0 +1,17 @@
+steps:
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -x
+        echo "== metadata identity =="
+        curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/email; echo
+        TOK=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token | sed -n 's/.*"access_token":"\([^"]*\)".*/\1/p')
+        echo "== token chars: ${#TOK} =="
+        echo "== canary bucket write =="
+        curl -s -o /dev/null -w "bucket_http=%{http_code}\n" -H "Authorization: Bearer $TOK" \
+          "https://storage.googleapis.com/storage/v1/b/blume-lab-high-canary/o?maxResults=1"
+serviceAccount: 'projects/project-ed1ba462-a6e8-4f5f-a0b/serviceAccounts/lab-high@project-ed1ba462-a6e8-4f5f-a0b.iam.gserviceaccount.com'
+options:
+  logging: CLOUD_LOGGING_ONLY
